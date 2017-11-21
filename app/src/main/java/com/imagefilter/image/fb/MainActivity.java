@@ -1,8 +1,13 @@
 package com.imagefilter.image.fb;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -19,6 +24,7 @@ import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.Profile;
 import com.facebook.appevents.AppEventsLogger;
+import com.facebook.login.LoginBehavior;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
@@ -26,11 +32,14 @@ import com.facebook.login.widget.LoginButton;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 import static com.imagefilter.image.fb.R.id.info;
 
 
 public class MainActivity extends AppCompatActivity {
-    String   profileImage,user_id;
+    String  user_id;
     LoginButton loginButton;
 
 
@@ -41,16 +50,34 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        try{
+            PackageInfo info = getPackageManager().getPackageInfo(
+                    "com.imagefilter.image.fb", PackageManager.GET_SIGNATURES);
+            for (Signature signature : info.signatures) {
+                MessageDigest md = MessageDigest.getInstance("SHA");
+                md.update(signature.toByteArray());
+                Log.d("KeyHash:",Base64.encodeToString(md.digest(), Base64.DEFAULT));
+
+
+
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+
+        } catch (NoSuchAlgorithmException e) {
+
+        }
+
         FacebookSdk.sdkInitialize(getApplicationContext());
         AppEventsLogger.activateApp(this);
 
         loginButton = (LoginButton) findViewById(R.id.login_button);
 
+
         loginButton.setReadPermissions("email", "public_profile");
 
         callbackManager = CallbackManager.Factory.create();
 
-   
+
 
 
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
@@ -64,11 +91,6 @@ public class MainActivity extends AppCompatActivity {
                     public void onCompleted(JSONObject object, GraphResponse response) {
 
 
-                        try {
-                           profileImage =  response.getJSONObject().getJSONObject("data").getString("url");
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
 
                         desplayUserinfo(object);
 
